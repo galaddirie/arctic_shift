@@ -8,8 +8,8 @@ from typing import Iterable
 from fileStreams import getFileJsonStream
 from utils import FileProgressLog
 
-
-fileOrFolderPath = r"<path to file or folder>"
+#D:\reddit\dumps\reddit
+fileOrFolderPath = r"D:\reddit\dumps\reddit\submissions"
 recursive = False
 
 def processFile(path: str):
