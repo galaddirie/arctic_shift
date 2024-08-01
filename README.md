@@ -44,6 +44,13 @@ cd arctic_shift
 ```bash
 pip install zstandard
 ```
+3. get submodules
+```bash
+git submodule update --init --recursive
+git submodule update --recursive --remote
+
+```
+
 
 3. Open [scripts/processFiles.py](scripts/processFiles.py) in your editor. That script can process .zst_blocks,
    .zst and new line delimited .jsonl files.
