@@ -2,6 +2,7 @@ import sys
 import csv
 import os
 import orjson as json
+import orjsonl
 import re
 from typing import Dict, List
 import zstandard as zstd
@@ -23,7 +24,7 @@ recursive = False
 output_dir = r"D:\reddit\dumps\reddit\submissions\organized"
 DEFAULT_WHITELIST_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'whitelist.csv')
 BLACKLISTED_FILES = {}
-CHUNK_SIZE = 1_000_000
+CHUNK_SIZE = 100_000  # Number of rows to process before writing to disk
 CHECKPOINT_FILE = "checkpoint.pkl"
 QUEUE_TIMEOUT = 30  # Increased timeout for queue operations
 
@@ -59,9 +60,7 @@ def write_jsonl_chunk(month_year: str, subreddit: str, data: list):
     month_dir = os.path.join(output_dir, month_year)
     os.makedirs(month_dir, exist_ok=True)
     output_file = os.path.join(month_dir, f"{sanitized_subreddit}.jsonl")
-    with open(output_file, 'a', encoding='utf-8') as f:
-        for item in data:
-            f.write(json.dumps(item) + '\n')
+    orjsonl.append(output_file, data)
 
 def compress_to_zst(input_file: str, output_file: str):
     with open(input_file, 'rb') as f_in:
@@ -124,7 +123,7 @@ def process_file(path: str, queue: mp.Queue, start_position: int = 0):
                        # Skip to the next 4-byte aligned position
                        f.seek((f.tell() + 3) & ~3)
                        continue
-                   except json.JSONDecodeError as je:
+                   except Exception as je:
                        print(f"JSON decode error in file {path} at position {f.tell()}: {je}")
                        continue
 
@@ -211,6 +210,8 @@ def process_single_file(file: str, start_position: int = 0):
 
 def compress_output_files():
     compression_tasks = []
+    print("Compressing output files...")
+    files_compressed = 0
     for month_year in os.listdir(output_dir):
         month_dir = os.path.join(output_dir, month_year)
         if os.path.isdir(month_dir):
@@ -220,6 +221,9 @@ def compress_output_files():
                     output_file = os.path.join(month_dir, f"{os.path.splitext(filename)[0]}.zst")
                     compress_to_zst(input_file, output_file)
                     os.remove(input_file)  # Remove the original jsonl file after compression
+                    files_compressed += 1
+                    print(f"\rCompressed {files_compressed} files", end='', flush=True)
+    print(f"\nCompression complete. Total files compressed: {files_compressed}")
 
 def main():
     checkpoint = load_checkpoint()
