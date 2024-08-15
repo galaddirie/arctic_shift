@@ -3,9 +3,9 @@ version = sys.version_info
 if version.major < 3 or (version.major == 3 and version.minor < 10):
     raise RuntimeError("This script requires Python 3.10 or higher")
 import os
-from typing import Iterable, List, Dict
+from typing import Dict
 
-from fileStreams import getFileJsonStream
+from fileStreams import getFileJsonStream  # Assuming these imports exist in your environment
 from utils import FileProgressLog
 
 import csv
@@ -14,18 +14,21 @@ from datetime import datetime
 fileOrFolderPath = r"D:\reddit\dumps\reddit\submissions"
 recursive = False
 
-subreddit = "PersonalFinanceCanada"
+subreddit = "PersonalFinance"
+# subreddit = subreddit.lower()
 search_terms = ["credit card", "visa"]
 
 comments = False
 
-# Create a dictionary to store CSV writers for each search term
+# Create a dictionary to store CSV writers and file objects for each search term
 csv_writers: Dict[str, csv.writer] = {}
+csv_files: Dict[str, open] = {}
 
 def init_csv_files():
     for term in search_terms:
         output_csv = f"reddit_{subreddit}_{'comments' if comments else 'posts'}_{term.replace(' ', '_')}.csv"
         csv_file = open(output_csv, 'w', newline='', encoding='utf-8')
+        csv_files[term] = csv_file
         csv_writers[term] = csv.writer(csv_file)
         csv_writers[term].writerow([
             "post_id", "post_title", "post_url", "post_comment_count", "post_text",
@@ -33,8 +36,8 @@ def init_csv_files():
         ])
 
 def close_csv_files():
-    for csv_file in csv_writers.values():
-        csv_file.writerow.close()
+    for csv_file in csv_files.values():
+        csv_file.close()
 
 def processFile(path: str):
     print(f"Processing file {path}")
@@ -71,20 +74,16 @@ def processFile(path: str):
         progressLog.logProgress("\n")
 
 def processFolder(path: str):
-    fileIterator: Iterable[str]
-    if recursive:
-        def recursiveFileIterator():
-            for root, dirs, files in os.walk(path):
-                for file in files:
-                    yield os.path.join(root, file)
-        fileIterator = recursiveFileIterator()
-    else:
-        fileIterator = os.listdir(path)
-        fileIterator = (os.path.join(path, file) for file in fileIterator)
-    
-    for i, file in enumerate(fileIterator):
-        print(f"Processing file {i+1: 3} {file}")
-        processFile(file)
+    for root, dirs, files in os.walk(path):
+        for dir_name in dirs:
+            month_folder = os.path.join(root, dir_name)
+            print(f"Processing month folder {month_folder}")
+            subreddit_file = os.path.join(month_folder, f"{subreddit}.zst")
+            if os.path.exists(subreddit_file):
+                print(f"Found {subreddit_file}, processing...")
+                processFile(subreddit_file)
+            else:
+                print(f"Subreddit file {subreddit}.zst not found in {month_folder}")
 
 def main():
     init_csv_files()
