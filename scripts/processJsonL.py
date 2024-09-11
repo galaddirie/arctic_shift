@@ -27,15 +27,19 @@ def processFile(path: str, csv_writer):
         for row in jsonStream:
             progressLog.onRow()
             
+            print(row)
+            
             # Map the row data to our field names
             mapped_row = {
                 'post_id': row.get('id', ''),
                 'post_title': row.get('title', ''),
-                'post_text': row.get('selftext', '') if 'selftext' in row else row.get('body', ''),
-                'post_comment_count': '',  # This field is not directly available in the provided data
                 'post_url': row.get('url', ''),
+                'post_text': row.get('selftext', '') if 'selftext' in row else row.get('body', ''),
+                'post_comment_count': row.get('num_comments', '0'), 
                 'post_date': datetime.fromtimestamp(row.get('created_utc', 0)).strftime('%Y-%m-%d %H:%M:%S'),
-                'poster_username': row.get('author', '')
+                'poster_username': row.get('author', ''),
+                'subreddit_name': row.get("subreddit", "")
+
             }
             
             csv_writer.writerow(mapped_row)
