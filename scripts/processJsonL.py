@@ -10,11 +10,11 @@ from typing import Iterable
 from fileStreams import getFileJsonStream
 from utils import FileProgressLog
 
-fileOrFolderPath = r"D:\reddit\data\r_airtransat_comments.jsonl"
+fileOrFolderPath = r"D:\reddit\data\r_airtransat_posts.jsonl"
 recursive = False
-output_csv_path = "reddit_airtransat_comments.csv"
+output_csv_path = "reddit_airtransat_posts.csv"
 
-fieldnames = ['post_id', 'post_title', 'post_text', 'post_comment_count', 'post_url', 'post_date', 'poster_username']
+fieldnames = ['post_id', 'post_title', 'post_text', 'post_comment_count', 'post_url', 'post_date', 'poster_username', 'subreddit_name']
 
 def processFile(path: str, csv_writer):
     print(f"Processing file {path}")
@@ -33,7 +33,7 @@ def processFile(path: str, csv_writer):
             mapped_row = {
                 'post_id': row.get('id', ''),
                 'post_title': row.get('title', ''),
-                'post_url': row.get('url', ''),
+                'post_url': row.get('url', '') if 'url' in row else row.get('permalink', ''),
                 'post_text': row.get('selftext', '') if 'selftext' in row else row.get('body', ''),
                 'post_comment_count': row.get('num_comments', '0'), 
                 'post_date': datetime.fromtimestamp(row.get('created_utc', 0)).strftime('%Y-%m-%d %H:%M:%S'),
