@@ -11,18 +11,17 @@ if version.major < 3 or (version.major == 3 and version.minor < 10):
     raise RuntimeError("This script requires Python 3.10 or higher")
 
 # Constants
-PROCESSING_COMMENTS = True  # Set to False if processing posts
+PROCESSING_COMMENTS = False  # Set to False if processing posts
 process_in_reverse = True
-fileOrFolderPath = r"D:\reddit\data\r_airtransat_comments.jsonl"
-recursive = False
+fileOrFolderPath = r"D:\reddit\dumps\reddit\submissions\test"
 
 # Subreddits and search terms
-subreddits = ["airtransat"]
+subreddits = ["mcdonalds", "askacanadian", "canadaimmigrant", "mcdonaldsemployees"]
 search_terms: Dict[str, Optional[List[str]]] = {
-    # "mcdonalds": ["Canada", "Canadian"],
-    # "askacanadian": ["McDonalds", "McDonald's"],
-    # "canadaimmigrant": ["McDonalds", "McDonald's"],
-    "airtransat": None,  # No specific search terms for askreddit
+    "mcdonalds": ["Canada", "Canadian"],
+    "askacanadian": ["McDonalds", "McDonald's"],
+    "canadaimmigrant": ["McDonalds", "McDonald's"],
+    "mcdonaldsemployees": None,  # No specific search terms for mcdonaldsemployees
 }
 
 # CSV writers and processed IDs
@@ -59,8 +58,7 @@ def process_row(row: Dict, subreddit: str, term: Optional[str] = None):
         })
         processed_ids[csv_key].add(row['id'])
 
-
-def processFile(path: str):
+def process_file(path: str):
     print(f"Processing file {path}")
     with open(path, "rb") as f:
         jsonStream = getFileJsonStream(path, f)
@@ -91,30 +89,22 @@ def processFile(path: str):
                             process_row(row, subreddit, term)
         progressLog.logProgress("\n")
 
-def processFolder(path: str):
-    fileIterator: Iterable[str]
-    if recursive:
-        def recursiveFileIterator():
-            for root, dirs, files in os.walk(path):
-                for file in files:
-                    yield os.path.join(root, file)
-        fileIterator = recursiveFileIterator()
-    else:
-        fileIterator = os.listdir(path)
-        fileIterator = (os.path.join(path, file) for file in fileIterator)
-    
-    # Convert iterator to a list and sort it
-    file_list = sorted(fileIterator, reverse=process_in_reverse)
-    
-    for i, file in enumerate(file_list):
-        print(f"Processing file {i+1: 3} {file}")
-        processFile(file)
+def process_folder(path: str):
+    for year_month in sorted(os.listdir(path), reverse=process_in_reverse):
+        year_month_path = os.path.join(path, year_month)
+        if os.path.isdir(year_month_path):
+            print(f"Processing folder: {year_month}")
+            for subreddit_file in os.listdir(year_month_path):
+                print(f"Processing file: {subreddit_file}")
+                if subreddit_file.lower().rstrip('.zml') in subreddits:
+                    file_path = os.path.join(year_month_path, subreddit_file)
+                    process_file(file_path)
 
 def main():
     if os.path.isdir(fileOrFolderPath):
-        processFolder(fileOrFolderPath)
+        process_folder(fileOrFolderPath)
     else:
-        processFile(fileOrFolderPath)
+        process_file(fileOrFolderPath)
     
     # Close all CSV files
     for writer in csv_writers.values():

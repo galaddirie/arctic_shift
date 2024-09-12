@@ -10,9 +10,15 @@ from typing import Iterable
 from fileStreams import getFileJsonStream
 from utils import FileProgressLog
 
-fileOrFolderPath = r"D:\reddit\data\r_airtransat_posts.jsonl"
+subreddit = "canadatravel"
+processing_comments = False
+
+file_type = "comments" if processing_comments else "posts"
+fileOrFolderPath = rf"D:\reddit\data\r_{subreddit}_{file_type}.jsonl"
 recursive = False
-output_csv_path = "reddit_airtransat_posts.csv"
+output_csv_path = f"reddit_{subreddit}_{file_type}.csv"
+
+keywords = ["airtransat", "air transat"]
 
 fieldnames = ['post_id', 'post_title', 'post_text', 'post_comment_count', 'post_url', 'post_date', 'poster_username', 'subreddit_name']
 
@@ -27,7 +33,6 @@ def processFile(path: str, csv_writer):
         for row in jsonStream:
             progressLog.onRow()
             
-            print(row)
             
             # Map the row data to our field names
             mapped_row = {
@@ -41,8 +46,10 @@ def processFile(path: str, csv_writer):
                 'subreddit_name': row.get("subreddit", "")
 
             }
+            # check if post title or post text contains any of the keywords
+            if any(keyword in mapped_row['post_title'].lower() for keyword in keywords) or any(keyword in mapped_row['post_text'].lower() for keyword in keywords):
             
-            csv_writer.writerow(mapped_row)
+                csv_writer.writerow(mapped_row)
 
         progressLog.logProgress("\n")
 

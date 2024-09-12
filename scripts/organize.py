@@ -238,6 +238,7 @@ def main():
         else:
             files = [os.path.join(fileOrFolderPath, f) for f in os.listdir(fileOrFolderPath) if os.path.isfile(os.path.join(fileOrFolderPath, f))]
         
+        files.sort(reverse=True)
         for file in files:
             if file.endswith('.zst'):
                 start_position = checkpoint.get(file, 0)
